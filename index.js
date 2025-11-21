@@ -1,30 +1,22 @@
-import { appendLine, Fetcher, HttpClient, writeLine } from './utils.js';
-
-/**
- * @param {string} name
- * @returns {string}
- */
-const env = (name) => {
-  const value = process.env[name];
-
-  if (value === undefined) {
-    throw new Error(`"${name}" environment variable is not defined`);
-  }
-
-  return value;
-};
+import {
+  appendLine,
+  env,
+  Fetcher,
+  HttpClient,
+  writeLine,
+} from './utils.js';
 
 const CONFIG = (() => {
   const quotes = `
-  AED AFN ALL AMD AOA ARS AUD AWG AZN BAM BBD BDT BHD BIF BMD BND
-  BOB BRL BSD BTN BWP BYN BZD CAD CDF CHF CLP CNY COP CRC CUP CVE
-  CZK DJF DKK DOP DZD EGP ETB EUR FJD GBP GEL GHS GMD GNF GTQ GYD
-  HKD HNL HTG HUF IDR ILS INR IQD IRR ISK JMD JOD JPY KES KGS KHR
-  KMF KRW KWD KYD KZT LAK LBP LKR LRD LSL LYD MAD MDL MGA MKD MOP
-  MRU MUR MVR MWK MXN MYR MZN NAD NGN NIO NOK NPR NZD OMR PEN PGK
-  PHP PKR PLN PYG QAR RON RSD RUB RWF SAR SBD SCR SDG SEK SGD SOS
-  SRD SZL THB TJS TMT TND TRY TTD TWD TZS UAH UGX USD UYU UZS VES
-  VND XAF XCD XOF XPF YER ZAR ZMW
+    AED AFN ALL AMD AOA ARS AUD AWG AZN BAM BBD BDT BHD BIF BMD BND
+    BOB BRL BSD BTN BWP BYN BZD CAD CDF CHF CLP CNY COP CRC CUP CVE
+    CZK DJF DKK DOP DZD EGP ETB EUR FJD GBP GEL GHS GMD GNF GTQ GYD
+    HKD HNL HTG HUF IDR ILS INR IQD IRR ISK JMD JOD JPY KES KGS KHR
+    KMF KRW KWD KYD KZT LAK LBP LKR LRD LSL LYD MAD MDL MGA MKD MOP
+    MRU MUR MVR MWK MXN MYR MZN NAD NGN NIO NOK NPR NZD OMR PEN PGK
+    PHP PKR PLN PYG QAR RON RSD RUB RWF SAR SBD SCR SDG SEK SGD SOS
+    SRD SZL THB TJS TMT TND TRY TTD TWD TZS UAH UGX USD UYU UZS VES
+    VND XAF XCD XOF XPF YER ZAR ZMW
   `
     .trim()
     .split(/\s+/);
@@ -32,18 +24,16 @@ const CONFIG = (() => {
   const baseUrl = env('AG_BASE_URL'); // e.g.: https://example.org/api
   const apiKey = env('AG_API_KEY');
 
-  const now = Date.now();
-  const day = 86400000;
-
-  const yesterdayStamp = new Date(now - day).toJSON().substring(0, 10);
-  const todayStamp = new Date(now).toJSON().substring(0, 10);
+  const yesterday = new Date(Date.now() - 86400000)
+    .toJSON()
+    .substring(0, 10);
 
   return {
     retries: 3,
     timeout: 2_000,
     quotes,
-    url: `${baseUrl}/${yesterdayStamp}?access_key=${apiKey}`,
-    latestUrl: `${baseUrl}/${todayStamp}?access_key=${apiKey}`,
+    url: `${baseUrl}/${yesterday}?access_key=${apiKey}`,
+    latestUrl: `${baseUrl}/latest?access_key=${apiKey}`,
     basePath: `./data/v1`,
   };
 })();

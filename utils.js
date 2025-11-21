@@ -1,5 +1,19 @@
 import { appendFile, writeFile } from 'fs/promises';
 
+/**
+ * @param {string} name
+ * @returns {string}
+ */
+export const env = (name) => {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`"${name}" environment variable is not defined`);
+  }
+
+  return value;
+};
+
 export class HttpClient {
   /**
    * @type {number}
@@ -16,7 +30,7 @@ export class HttpClient {
    * @param {number=} options.retries
    * @param {number=} options.timeout
    */
-  constructor(options) {
+  constructor(options = {}) {
     this.#retries = options.retries || 0;
     this.#timeout = options.timeout || 10_000;
   }
@@ -99,55 +113,38 @@ export class Concurrency {
   #results;
 
   /**
-   * @type {number}
-   */
-  #index;
-
-  /**
    * @param {(() => Promise<T>)[]} promises
    */
   constructor(promises) {
     this.#promises = promises;
-    this.#results = [];
-    this.#index = 0;
+    this.#results = new Array(promises.length);
   }
 
   /**
    * @param {object} options
    * @param {number} options.batchSize
-   * @returns {Promise<T[]>}
-   */
-  async run(options) {
-    const size = Math.min(options.batchSize, this.#promises.length);
-    const executing = [];
-
-    for (let i = 0; i < size; i++) {
-      executing.push(this.#runOne(i));
-    }
-
-    await Promise.all(executing);
-
-    return [...this.#results];
-  }
-
-  /**
-   * @param {number} index
    * @returns {Promise<void>}
    */
-  async #runOne(index) {
-    const result = await this.#promises[index]();
+  async run(options) {
+    const { batchSize } = options;
+    let currentIndex = 0;
 
-    this.#results[index] = result;
+    const worker = async () => {
+      while (currentIndex < this.#promises.length) {
+        const index = currentIndex++;
 
-    if (this.#index < this.#promises.length - 1) {
-      this.#index++;
-
-      const nextIndex = this.#index;
-
-      if (nextIndex < this.#promises.length) {
-        await this.#runOne(nextIndex);
+        if (index < this.#promises.length) {
+          this.#results[index] = await this.#promises[index]();
+        }
       }
-    }
+    };
+
+    const workers = Array(Math.min(batchSize, this.#promises.length))
+      .fill(null)
+      .map(() => worker());
+
+    await Promise.all(workers);
+    return this.#results;
   }
 }
 
