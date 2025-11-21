@@ -1,0 +1,54 @@
+name: Daily
+
+# secrets. SECRET_GITHUB_TOKEN
+# secrets. SECRET_AG_BASE_URL
+# secrets. SECRET_AG_API_KEY
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  fetch-and-commit:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.SECRET_GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run the script
+        env:
+          AG_BASE_URL: ${{ secrets.SECRET_AG_BASE_URL }}
+          AG_API_KEY: ${{ secrets.SECRET_AG_API_KEY }}
+        run: npm start
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Check for changes
+        id: verify-changed-files
+        run: |
+          git diff --quiet . || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push changes
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          git add .
+          git commit -m "update data: $(date +'%Y-%m-%d')"
+          git push
