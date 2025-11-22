@@ -31,6 +31,7 @@ const CONFIG = (() => {
   return {
     retries: 3,
     timeout: 2_000,
+    backoff: 3_000,
     quotes,
     url: `${baseUrl}/${yesterday}?access_key=${apiKey}`,
     latestUrl: `${baseUrl}/latest?access_key=${apiKey}`,
@@ -42,6 +43,7 @@ export const main = async () => {
   const httpClient = new HttpClient({
     retries: CONFIG.retries,
     timeout: CONFIG.timeout,
+    backoff: CONFIG.backoff,
   });
 
   const fetcher = new Fetcher({

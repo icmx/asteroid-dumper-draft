@@ -36,6 +36,11 @@ export class HttpClient {
   #timeout;
 
   /**
+   * @type {number}
+   */
+  #backoff;
+
+  /**
    * @param {object} options
    * @param {number=} options.retries
    * @param {number=} options.timeout
@@ -44,7 +49,7 @@ export class HttpClient {
   constructor(options = {}) {
     this.#retries = options.retries || 0;
     this.#timeout = options.timeout || 10_000;
-    this.#timeout = options.backoff || 3_000;
+    this.#backoff = options.backoff || 3_000;
   }
 
   /**
@@ -79,6 +84,8 @@ export class HttpClient {
           console.warn(
             `Attempt ${attempt}/${retries} failed for "${url}", retrying...`
           );
+
+          await wait(this.#backoff);
         } else {
           throw error;
         }
