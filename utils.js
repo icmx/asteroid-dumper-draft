@@ -14,6 +14,16 @@ export const env = (name) => {
   return value;
 };
 
+/**
+ * @param {number} delay
+ * @returns {Promise<void>}
+ */
+export const wait = (delay) => {
+  return new Promise((resolve) => {
+    return setTimeout(resolve, delay);
+  });
+};
+
 export class HttpClient {
   /**
    * @type {number}
@@ -29,10 +39,12 @@ export class HttpClient {
    * @param {object} options
    * @param {number=} options.retries
    * @param {number=} options.timeout
+   * @param {number=} options.backoff
    */
   constructor(options = {}) {
     this.#retries = options.retries || 0;
     this.#timeout = options.timeout || 10_000;
+    this.#timeout = options.backoff || 3_000;
   }
 
   /**
@@ -62,10 +74,10 @@ export class HttpClient {
         return data;
       } catch (error) {
         if (i < retries) {
+          const attempt = i + 1;
+
           console.warn(
-            `Attempt ${i + 1}/${
-              retries + 1
-            } failed for "${url}", retrying...`
+            `Attempt ${attempt}/${retries} failed for "${url}", retrying...`
           );
         } else {
           throw error;
